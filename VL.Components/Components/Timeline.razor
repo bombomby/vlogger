@@ -1,0 +1,48 @@
+﻿@using VL.Components.Models
+@inherits TimelineBase
+
+<div height="@MaxHeight" width="100%" style="border: 1px solid #000000">
+@if (Job != null) lock (Job.DB)     //
+{
+<svg height="auto" width="100%" style="border:1px solid #ff0000" viewBox="0 0 @MaxWidth @(MaxDepth * RowHeight)" >
+   <style>
+        .label-name { font-weight: 800; color: black; vertical-align: middle; margin-left: 4px; }
+        .label-args { color: #202020; vertical-align: middle; margin-left: 4px; }
+        .container { 
+            display: flex;
+            overflow: hidden;
+            flex-wrap: nowrap; 
+        }
+    </style>
+
+    @foreach (var item in Items)
+    {
+        <rect x="@item.Area.X" y="@item.Area.Y" height="@item.Area.Height" width="@item.Area.Width" fill="#@Utils.ToStringNoAlpha(@item.Color)" />
+        <foreignObject x="@item.Area.X" y="@item.Area.Y" height="@item.Area.Height" width="@item.Area.Width">
+            <div class="container">
+                <div class="label-name">@item.Cmd</div>
+                <div class="label-args">@item.Args</div>
+            </div>
+        </foreignObject>
+        //<text><text x="@item.Area.X" y="@(item.Area.Y + RowHeight - FontSize * 0.5f)" class="label" font-size="@FontSize">@item.Process.Cmd</text></text>
+    }
+</svg>
+}
+</div>
+
+
+@code {
+    [Parameter]
+    public Job? Job { get; set; }
+
+
+    protected override void OnInitialized()
+    {
+        if (Job != null)
+        {
+            Task.Run(() => Load(Job));
+            if (!Job.IsFinished)
+                Ticker = new BufferedUpdate(() => Load(Job));
+        }
+    }
+}

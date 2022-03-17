@@ -1,0 +1,25 @@
+﻿@using MudBlazor
+@using VL.Components.Models
+@using VL.Components.Services
+@inject JobService JobService
+
+<MudPaper Class="pa-2">
+    <MudForm>
+        <MudTextField T="string" Label="Command" Required="true" RequiredError="Command to run" HelperTextOnFocus="true" @bind-Value="@Cmd" />
+        <MudTextField T="string" Label="Arguments" HelperText="Command line arguments" HelperTextOnFocus="true" @bind-Value="Args" />
+        <MudButton Variant="Variant.Filled" Color="Color.Primary" Class="ml-auto" OnClick="@RunCommand">Run</MudButton>
+    </MudForm>
+</MudPaper>
+
+@code {
+    [Parameter]
+    public String? Cmd { get; set; }
+
+    [Parameter]
+    public String? Args { get; set; }
+
+    void RunCommand()
+    {
+        JobService.Run(new JobRequest(Cmd != null ? Cmd : String.Empty, Args != null ? Args : String.Empty));
+    }
+}

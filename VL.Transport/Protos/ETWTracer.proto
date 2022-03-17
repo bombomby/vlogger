@@ -1,0 +1,87 @@
+syntax = "proto3";
+
+import "google/protobuf/empty.proto";
+import "google/protobuf/wrappers.proto";
+import "google/protobuf/timestamp.proto";
+
+option csharp_namespace = "VL.Transport";
+
+package VL;
+
+service ETWTracer {
+	rpc IsTracingActive(google.protobuf.Empty) returns (google.protobuf.BoolValue);
+
+	rpc EnableTracing(TraceOptions) returns (Result);
+	rpc DisableTracing(google.protobuf.Empty) returns (Result);
+
+	rpc StartTraceStream (google.protobuf.Empty) returns (stream TraceReply);
+}
+
+
+message Result
+{
+	enum ErrorCode
+	{
+		Ok = 0;
+		Warning = 1;
+		Error = 2;
+	}
+
+	ErrorCode code = 1;
+	string message = 2;
+}
+
+message TraceOptions {
+	int32 processID = 1;	
+	bool network = 2;
+	bool fileIO = 3;
+}
+
+message ProcessFilter
+{
+	int32 pid = 1;
+}
+
+message ProcessDescription {
+	int32 processID = 1;
+	int32 parentID = 2;
+	int32 groupID = 3;
+	uint64 uniqueProcessKey = 4;
+	uint64 parentUniqueProcessKey = 5;
+	string application = 6;
+	string args = 7;
+	optional google.protobuf.Timestamp start = 8;
+	optional google.protobuf.Timestamp finish = 9;
+}
+
+message NetworkTrace {
+	enum Command
+	{
+		Send = 0;
+		Receive = 1;
+	}
+	google.protobuf.Timestamp timestamp = 1;
+	string address = 2;
+	int64 size = 3;
+	Command cmd = 4;
+}
+
+message FileTrace {
+	enum Command
+	{
+		Read = 0;
+		Write = 1;
+		Delete = 2;
+	}
+	google.protobuf.Timestamp timestamp = 1;
+	string filename = 2;
+	int64 size = 3;
+	Command cmd = 4;
+}
+
+message TraceReply {
+	ProcessDescription process = 1;
+
+	repeated NetworkTrace network = 2;
+	repeated FileTrace fileIO = 3;
+}

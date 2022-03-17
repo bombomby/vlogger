@@ -1,0 +1,56 @@
+﻿@using Microsoft.AspNetCore.Components.Forms
+@using Microsoft.EntityFrameworkCore
+@using MudBlazor
+@using VL.Components.Database
+@using VL.Components.Models
+@using VL.Components.Services
+@inject JobService JobStorage
+@inject IDbContextFactory<JobContext> DbFactory
+
+<MudText Typo="Typo.h6" GutterBottom="true">Job List</MudText>
+
+<MudGrid Class="my-1">
+    <MudItem xs="12" sm="3">
+        <CommandCard Cmd="ping" Args="google.com" />
+    </MudItem>
+    <MudItem xs="12" sm="3">
+        <CommandCard Cmd="msbuild" Args="D:\Projects\optick\build\vs2019\Optick.sln /t:rebuild" />
+    </MudItem>
+    <MudItem xs="12" sm="3">
+        <CommandCard Cmd="C:\Program Files (x86)\Microsoft\Edge\Application\msedge.exe" Args="dtf.ru" />
+    </MudItem>
+    <MudItem xs="12" sm="3">
+        <CommandCard Cmd="C:\Program Files\Notepad++\notepad++.exe" Args="D:\Projects\VLogger\VLogger.sln" />
+    </MudItem>
+</MudGrid>
+
+@foreach (Job job in JobStorage.Jobs)
+{
+    <JobInfo Job=@job />
+}
+
+@code {
+
+    private bool IsBusy { get; set; }
+    private JobContext? Context { get; set; }
+
+    protected override async Task OnInitializedAsync()
+    {
+        JobStorage.PropertyChanged += (o, e) => Refresh();
+        try
+        {
+            IsBusy = true;
+            Context = DbFactory.CreateDbContext();
+        }
+        finally
+        {
+            IsBusy = false;
+        }
+        await base.OnInitializedAsync();
+    }
+
+    private void Refresh()
+    {
+        InvokeAsync(() => StateHasChanged());
+    }
+}

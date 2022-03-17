@@ -1,0 +1,67 @@
+﻿@using MudBlazor
+@using VL.Components.Services
+@using Grpc.Core
+@using VL.Transport
+@inject ETWService ETW
+@inject ISnackbar Snackbar
+
+<MudSwitch @bind-Checked="@EnableETWTracer" Label="Tracing" Color="@CurrentColor" />
+
+@code {
+
+    public bool IsPending { get; set; }
+
+    public Color CurrentColor
+    {
+        get
+        {
+            if (IsPending)
+                return Color.Warning;
+
+            if (ETW.IsConnected)
+            {
+
+
+                return ETW.IsTracingActive ? Color.Success : Color.Error;
+            }
+            return Color.Primary;
+        }
+    }
+
+    bool _enableETWTracer = false;
+    public bool EnableETWTracer
+    {
+        get { return _enableETWTracer; }
+        set 
+        {
+            _enableETWTracer = value;
+            IsPending = true;
+
+            Task.Run(async () =>
+            {
+                try
+                {
+                    Result res = await ETW.EnableTracing(value);
+                    if (res.Code != Result.Types.ErrorCode.Ok)
+                        Snackbar.Add(String.Format("ETWService: {0}", res.Message), Severity.Error);
+                }
+                catch (RpcException ex)
+                {
+                    Snackbar.Add(String.Format("ETWService: {0}", ex.ToString()), Severity.Error);
+                }
+                finally
+                {
+                    IsPending = false;
+                }
+
+                await InvokeAsync(() => StateHasChanged());
+            });
+        }
+    }
+
+    protected override async Task OnInitializedAsync()
+    {
+        _enableETWTracer = await ETW.IsTracingActiveOnService();
+        ETW.PropertyChanged += (n, e) => InvokeAsync(() => StateHasChanged());
+    }
+}

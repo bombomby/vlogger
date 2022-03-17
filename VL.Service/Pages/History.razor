@@ -1,0 +1,14 @@
+﻿@page "/history"
+@using VL.Components.Components
+@using VL.Service.Data
+
+<PageTitle>Job History</PageTitle>
+
+<JobHistory />
+
+@code {
+    protected override async Task OnInitializedAsync()
+    {
+        await base.OnInitializedAsync();
+    }
+}

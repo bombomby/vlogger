@@ -1,0 +1,13 @@
+﻿{
+  "profiles": {
+    "VL.Tracer": {
+      "commandName": "Project",
+      "dotnetRunMessages": true,
+      "launchBrowser": false,
+      "applicationUrl": "http://localhost:42007;https://localhost:42008",
+      "environmentVariables": {
+        "ASPNETCORE_ENVIRONMENT": "Development"
+      }
+    }
+  }
+}

@@ -1,0 +1,99 @@
+﻿@using MudBlazor
+@using VL.Components.Database
+@using VL.Components.Models
+@using VL.Components.Services
+@inject JobService JobStorage
+
+<MudPaper Elevation="4" Class="my-2" Style="position: relative;">
+    <MudTabs Elevation="2" Rounded="true" Centered="true">
+        <MudTabPanel Icon="@SummaryIcon" Text="Summary">
+            <JobSummary Job="@Job" />
+        </MudTabPanel>
+        <MudTabPanel Icon="@Icons.Material.Filled.TextSnippet" Text="Log" BadgeData="@Job?.DB.OutputCount" BadgeColor="Color.Info">
+            @if (Job != null) lock (Job.DB)
+            {
+                @foreach (LogEntry entry in Job.DB.Logs.FindAll(l => l.Channel == LogChannel.Info))
+                {
+                    <div><b>@entry.Timestamp</b> @entry.Message</div>
+                }
+            }
+        </MudTabPanel>
+        <MudTabPanel Icon="@Icons.Filled.ReportProblem" Text="Errors" BadgeData="@Job?.DB.ErrorCount" BadgeColor="Color.Error">
+            @if (Job != null) lock (Job.DB)
+            {
+                @foreach (LogEntry entry in Job.DB.Logs.FindAll(l => l.Channel == LogChannel.Error))
+                {
+                    <div><b>@entry.Timestamp</b> @entry.Message</div>
+                }
+            }
+        </MudTabPanel>
+        <MudTabPanel Icon="@Icons.Material.Filled.AccessTime" Text="Timeline">
+            <Timeline Job="@Job" />
+        </MudTabPanel>
+        <MudTabPanel Icon="@Icons.Material.Filled.Lan" Text="Network">
+            <MudTable Dense="true" Items="@Job?.NetworkSummary.Entries.Values" Hover="true" SortLabel="Sort By">
+                <HeaderContent>
+                    <MudTh><MudTableSortLabel SortBy="new Func<NetworkSummary.Entry, object>(x=>x.Address)">Address</MudTableSortLabel></MudTh>
+                    <MudTh><MudTableSortLabel SortBy="new Func<NetworkSummary.Entry, object>(x=>x.Hostname)">Hostname</MudTableSortLabel></MudTh>
+                    <MudTh><MudTableSortLabel SortBy="new Func<NetworkSummary.Entry, object>(x=>x.Receive)">Receive (Bytes)</MudTableSortLabel></MudTh>
+                    <MudTh><MudTableSortLabel SortBy="new Func<NetworkSummary.Entry, object>(x=>x.Send)">Send (Bytes)</MudTableSortLabel></MudTh>
+                    <MudTh><MudTableSortLabel InitialDirection="SortDirection.Descending" SortBy="new Func<FileIOSummary.Entry, object>(x=>x.Total)">Total (Bytes)</MudTableSortLabel></MudTh>
+                </HeaderContent>
+                <RowTemplate>
+                    <MudTd DataLabel="Hostname">@context.Address</MudTd>
+                    <MudTd DataLabel="Hostname">@context.Hostname</MudTd>
+                    <MudTd DataLabel="Receive">@context.Receive.ToString("N0", Utils.NumberFormat)</MudTd>
+                    <MudTd DataLabel="Send">@context.Send.ToString("N0", Utils.NumberFormat)</MudTd>
+                    <MudTd DataLabel="Total">@context.Total.ToString("N0", Utils.NumberFormat)</MudTd>
+                </RowTemplate>
+                <PagerContent>
+                    <MudTablePager PageSizeOptions="new int[]{50, 100}" />
+                </PagerContent>
+            </MudTable>
+        </MudTabPanel>
+        
+        <MudTabPanel Icon="@Icons.Material.Filled.Folder" Text="Files">
+            <MudTable Dense="true" Items="@Job?.FileSummary.Entries.Values" Hover="true" SortLabel="Sort By">
+                <HeaderContent>
+                    <MudTh><MudTableSortLabel SortBy="new Func<FileIOSummary.Entry, object>(x=>x.Filename)">Filename</MudTableSortLabel></MudTh>
+                    <MudTh><MudTableSortLabel SortBy="new Func<FileIOSummary.Entry, object>(x=>x.Read)">Read (Bytes)</MudTableSortLabel></MudTh>
+                    <MudTh><MudTableSortLabel SortBy="new Func<FileIOSummary.Entry, object>(x=>x.Write)">Write (Bytes)</MudTableSortLabel></MudTh>
+                    <MudTh><MudTableSortLabel InitialDirection="SortDirection.Descending" SortBy="new Func<FileIOSummary.Entry, object>(x=>x.Total)">Total (Bytes)</MudTableSortLabel></MudTh>
+                </HeaderContent>
+                <RowTemplate>
+                    <MudTd DataLabel="Filename">@context.Filename</MudTd>
+                    <MudTd DataLabel="Read">@context.Read.ToString("N0", Utils.NumberFormat)</MudTd>
+                    <MudTd DataLabel="Write">@context.Write.ToString("N0", Utils.NumberFormat)</MudTd>
+                    <MudTd DataLabel="Total">@context.Total.ToString("N0", Utils.NumberFormat)</MudTd>
+                </RowTemplate>
+                <PagerContent>
+                    <MudTablePager PageSizeOptions="new int[]{50, 100}" />
+                </PagerContent>
+            </MudTable>
+        </MudTabPanel>
+    </MudTabs>
+    <MudIconButton Icon="@Icons.Material.Filled.Close" Variant="Variant.Outlined" Color="Color.Error" Size="Size.Small" Style="position: absolute; top: 8px; right: 8px;" OnClick="@CloseMe" />
+</MudPaper>
+@code {
+    [Parameter] 
+    public Job? Job { get; set; }
+
+    protected override void OnInitialized()
+    {
+        if (Job != null)
+            Job.PropertyChanged += (o, e) => Refresh();
+    }
+
+    private void Refresh()
+    {
+        InvokeAsync(() => StateHasChanged());
+    }
+
+    private void CloseMe()
+    {
+        if (Job != null)
+            JobStorage.Delete(Job); 
+    }
+
+    private string SummaryIcon => Job == null || !Job.IsFinished ? MudBlazor.Icons.Filled.HourglassTop : (Job.ExitCode == 0 ? MudBlazor.Icons.Filled.CheckCircle : @Icons.Filled.ReportGmailerrorred);
+}

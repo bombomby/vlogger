@@ -1,0 +1,62 @@
+﻿@using MudBlazor
+@using VL.Components.Models
+
+<MudList Dense="true">
+    <MudItem Class="d-flex flex-row align-center mb-2" >
+        <MudIcon Icon="@Icons.Filled.Terminal" Class="ml-3" />
+        <MudText Typo="Typo.body1" Class="ml-2">@String.Format("{0} {1}", Job?.Cmd, Job?.Args)</MudText>
+    </MudItem>
+    <MudDivider />
+    <MudGrid Class="ma-0 pb-0">
+        <MudItem xs="12" md="3" Class="pb-0">
+            <SummaryItem Icon="@Icons.Filled.PlayCircleOutline" Text="@Job?.Start.ToString()" Color="Color.Success" />
+            <SummaryItem Icon="@Icons.Material.Filled.AccessTime" Text="@Duration" Color="@(Job != null && Job.IsFinished ? Color.Success : Color.Warning)" />
+        </MudItem>
+        <MudItem xs="12" md="3" Class="pb-0">
+            <SummaryItem Icon="@Icons.Material.Filled.CloudDownload" Text="@Job?.DB.NetworkReceive.ToString("N0", Utils.NumberFormat)" />
+            <SummaryItem Icon="@Icons.Material.Filled.CloudUpload" Text="@Job?.DB.NetworkSend.ToString("N0", Utils.NumberFormat)" />
+        </MudItem>
+        <MudItem xs="12" md="3" Class="pb-0">
+            <SummaryItem Icon="@Icons.Filled.DriveFolderUpload" Text="@Job?.DB.FileRead.ToString("N0", Utils.NumberFormat)" />
+            <SummaryItem Icon="@Icons.Filled.DriveFolderUpload" Text="@Job?.DB.FileWrite.ToString("N0", Utils.NumberFormat)" />
+        </MudItem>
+        <MudItem xs="12" md="3" Class="pb-0">
+            <SummaryItem Icon="@Icons.Filled.Terminal" Text="@Job?.DB.NumSubProcesses.ToString("N0", Utils.NumberFormat)" />
+            <SummaryItem Icon="@Icons.Rounded.PlaylistAddCheck" Text="@Job?.ExitCode.ToString()" />
+        </MudItem>
+    </MudGrid>
+</MudList>
+
+
+
+@code {
+    const String TimeSpanFormat = @"hh\:mm\:ss\.fff";
+
+    [Parameter]
+    public Job? Job { get; set; }
+
+    private String Duration
+    {
+        get
+        {
+            if (Job == null)
+                return String.Empty;
+
+            if (Job.IsFinished)
+                return Job.Duration.ToString(TimeSpanFormat);
+
+            return (DateTime.Now - Job.Start).ToString(TimeSpanFormat);
+        }
+    }
+
+    protected override void OnInitialized()
+    {
+        if (Job != null)
+            Job.PropertyChanged += (o, e) => Refresh();
+    }
+
+    private void Refresh()
+    {
+        InvokeAsync(() => StateHasChanged());
+    }
+}

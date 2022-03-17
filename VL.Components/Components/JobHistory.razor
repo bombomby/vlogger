@@ -1,0 +1,42 @@
+﻿@using Microsoft.AspNetCore.Components.Forms
+@using Microsoft.EntityFrameworkCore
+@using MudBlazor
+@using VL.Components.Database
+@using VL.Components.Models
+@using VL.Components.Services
+@inject JobService JobStorage
+@inject IDbContextFactory<JobContext> DbFactory
+@inject ISnackbar Snackbar
+
+@foreach (Job job in Jobs)
+{
+    <JobInfo Job=@job />
+}
+
+@code {
+    List<Job> Jobs = new List<Job>();
+
+    private JobContext? Context { get; set; }
+
+    protected override async Task OnInitializedAsync()
+    {
+        try
+        {
+            Context = DbFactory.CreateDbContext();
+            await Context.Database.EnsureCreatedAsync();
+            List<JobEntry> entries = await Context.Jobs.ToListAsync();
+            foreach (JobEntry e in entries.OrderBy(e => e.Start))
+                Jobs.Add(new Job(e));
+        }
+        catch (Exception ex)
+        {
+            Snackbar.Add(ex.Message, Severity.Error);
+        }
+        await base.OnInitializedAsync();
+    }
+
+    private void Refresh()
+    {
+        InvokeAsync(() => StateHasChanged());
+    }
+}
